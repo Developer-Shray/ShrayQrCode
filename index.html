@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QR Code Generator</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      --text-color: #f0f0f0;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --input-bg: rgba(255, 255, 255, 0.1);
+      --primary: #00c6ff;
+      --accent: #0072ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      flex-direction: column;
+    }
+
+    .container {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    h1 {
+      font-size: 26px;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"], select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      background: var(--input-bg);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    select option {
+      background: #222;
+      color: #fff;
+    }
+
+    input::placeholder {
+      color: #ccc;
+    }
+
+    button {
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px 0;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .qr-box-wrapper {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .qr-box {
+      background: #fff;
+      padding: 20px;
+      border-radius: 16px;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    .qr-box.show {
+      display: inline-block;
+      opacity: 1;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      margin: 8px 0 4px;
+      font-size: 14px;
+    }
+
+    footer {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #bbb;
+    }
+
+    footer a {
+      color: #00c6ff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 QR Code Generator</h1>
+    
+    <label for="text">Enter Text or URL</label>
+    <input type="text" id="text" placeholder="https://example.com" />
+
+    <label for="color">Select QR Code Color</label>
+    <select id="color">
+      <option value="#000000">Black</option>
+      <option value="#ff0000">Red</option>
+      <option value="#0072ff">Blue</option>
+      <option value="#00c853">Green</option>
+      <option value="#fbc02d">Yellow</option>
+      <option value="#9c27b0">Purple</option>
+      <option value="#ff9800">Orange</option>
+      <option value="#00bcd4">Teal</option>
+      <option value="#3f51b5">Indigo</option>
+      <option value="#607d8b">Slate Gray</option>
+      <option value="#e91e63">Pink</option>
+    </select>
+
+    <label for="size">Select QR Code Size</label>
+    <select id="size">
+      <option value="150">150 x 150</option>
+      <option value="200" selected>200 x 200</option>
+      <option value="250">250 x 250</option>
+      <option value="300">300 x 300</option>
+    </select>
+
+    <label for="filename">Optional Download Filename</label>
+    <input type="text" id="filename" placeholder="my-qr-code" />
+
+    <button onclick="generateQR()">Generate</button>
+    <button onclick="downloadQR()">Download</button>
+    <button onclick="resetPage()">Reset</button>
+
+    <div class="qr-box-wrapper">
+      <div class="qr-box" id="qr-background">
+        <div id="qrcode"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Made with ❤️ by <a href="https://www.linkedin.com/in/shray-sharma/" target="_blank">Shray Sharma</a></p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    let qr;
+
+    function generateQR() {
+      const text = document.getElementById('text').value.trim();
+      const color = document.getElementById('color').value;
+      const size = parseInt(document.getElementById('size').value);
+      const qrBox = document.getElementById('qr-background');
+      const qrContainer = document.getElementById('qrcode');
+
+      if (!text) {
+        alert("Please enter some text or URL.");
+        return;
+      }
+
+      qrContainer.innerHTML = ''; // Clear previous QR
+      qrBox.classList.remove('show');
+
+      setTimeout(() => {
+        qrContainer.style.width = `${size}px`;
+        qrContainer.style.height = `${size}px`;
+
+        qr = new QRCode(qrContainer, {
+          text: text,
+          width: size,
+          height: size,
+          colorDark: color,
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+
+        qrBox.style.background = "#ffffff";
+        qrBox.style.display = 'inline-block';
+        qrBox.classList.add('show');
+      }, 50);
+    }
+
+    function downloadQR() {
+      const qrBox = document.getElementById('qr-background');
+      if (qrBox.style.display === 'none') {
+        alert('Generate the QR code first!');
+        return;
+      }
+
+      const filename = document.getElementById('filename').value.trim() || "QR Code";
+
+      html2canvas(qrBox, { backgroundColor: null }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+
+    function resetPage() {
+      // Clear the input fields and QR code
+      document.getElementById('text').value = '';
+      document.getElementById('filename').value = '';
+      document.getElementById('qrcode').innerHTML = '';
+      
+      // Reset the color and size dropdowns
+      document.getElementById('color').selectedIndex = 0;  // Reset to first option (Black)
+      document.getElementById('size').selectedIndex = 1;   // Reset to default size (200x200)
+      
+      // Hide the QR code box
+      const qrBox = document.getElementById('qr-background');
+      qrBox.classList.remove('show');
+      qrBox.style.display = 'none';
+    }
+  </script>
+</body>
+</html>
+    
